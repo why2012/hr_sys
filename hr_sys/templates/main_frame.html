@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    {% load base %}
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>YiWang Human Resource</title>
+    <link rel="stylesheet" type="text/css" href="{% static "mysite/css/easyui_themes/default/easyui.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "mysite/css/easyui_themes/icon.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "mysite/css/easyui_demo/demo.css" %}">
+    <script type="text/javascript" src="{% static "mysite/js/jquery.min.js" %}"></script>
+    <script type="text/javascript" src="{% static "mysite/js/jquery.easyui.min.js" %}"></script>
+    <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <meta name="robots" content="NONE,NOARCHIVE">
+    <style type="text/css">
+        html,body {
+            height: 100%;
+            width: 100%;
+            padding: 0;
+            font-family: "Roboto","Lucida Grande","DejaVu Sans","Bitstream Vera Sans",Verdana,Arial,sans-serif;
+        }
+
+        .menu_item {
+            margin-bottom: 10px;
+        }
+
+        #header {
+            width: auto;
+            height: 60px;
+            padding: 10px 40px;
+            background: #417690;
+            line-height: 40px;
+            color: #ffc;
+            overflow: hidden;
+        }
+
+        #branding {
+            float: left;
+        }
+
+        #branding h1 {
+            padding: 0;
+            margin: 0 20px 0 0;
+            font-weight: 50;
+            font-size: 24px;
+            color: #f5dd5d;
+        }
+
+        #header a:link, #header a:visited {
+            color: #fff;
+        }
+
+        a:link, a:visited {
+            text-decoration: none;
+        }
+
+        #branding h1, #branding h1 a:link, #branding h1 a:visited {
+            color: #f5dd5d;
+        }
+
+        #user-tools {
+            float: right;
+            padding: 0;
+            margin: 0 0 0 20px;
+            font-weight: 50;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <div class="easyui-layout" style="width:100%;height:100%;">
+        <div data-options="region:'north'" id="header">
+            <div id="branding">
+                <h1 id="site-name"><a href="">YiWang Human Resource</a></h1>
+            </div>
+            <div id="user-tools">
+                Welcome,
+                <strong>{{ username }}</strong>.
+                <a href="/">View site</a> /
+                <a href="/admin/password_change/">Change password</a> /
+                <a href="logout">Log out</a>
+        </div>
+        </div>
+        <div data-options="region:'west',split:true" title="功能菜单" style="width:15%;">
+            <div class="easyui-accordion" data-options="fit:true,border:false">
+                {% for parentMenuData in orderMenuTree %}
+                    <div title="{{ parentMenuData|get_item:"name" }}" data-options="selected:true" style="padding:10px;">
+                        {% for childMenuItem in parentMenuData|get_item:"childDetail" %}
+                            <a href="{{ childMenuItem.link_url }}" target="main_iframe" class="menu_item easyui-linkbutton" style="width:100%"
+                               {% if childMenuItem.icon_url == "-" or childMenuItem.icon_url == "" %}
+                               {% else %}
+                               data-options="iconCls:'{{ childMenuItem.icon_url }}',size:'large',iconAlign:'top'"
+                               {% endif %}
+                            >{{ childMenuItem.name }}</a>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div data-options="region:'center',title:'Main Page',iconCls:'icon-ok'">
+            <div class="easyui-tabs" data-options="fit:true,border:false,plain:true">
+                <div title="概览" data-options="" style="padding:0;">
+                    <iframe name="main_iframe" src="login" style="border: 0; width: 100%; height: 100%;"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

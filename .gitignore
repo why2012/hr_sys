@@ -1,0 +1,7 @@
+__pycache__/
+polls/
+.idea/
+*.pyc
+*.sqlite3
+migrations/*.*
+!migrations/__init__.py
