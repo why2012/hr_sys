@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from hr_sys.decorators import checklogin
 from hr_sys.models import UserGroup, User, MenuItem, UserGroupMenuItem
+from django.http import HttpResponse
 import logging
 logger = logging.getLogger(__name__)
 
@@ -47,3 +48,7 @@ def index(request):
     context["username"] = currUser.name
 
     return render(request, 'main_frame.html', context)
+
+@checklogin()
+def overview(request):
+    return HttpResponse("Overview")

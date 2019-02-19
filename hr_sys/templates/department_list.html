@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>部门列表</title>
+    <link rel="stylesheet" type="text/css" href="{% static "mysite/css/easyui_themes/default/easyui.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "mysite/css/easyui_themes/icon.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "mysite/css/easyui_demo/demo.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "mysite/css/login_css/base.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "admin/css/forms.css" %}">
+    <script type="text/javascript" src="{% static "mysite/js/jquery.min.js" %}"></script>
+    <script type="text/javascript" src="{% static "mysite/js/jquery.easyui.min.js" %}"></script>
+    <script type="text/javascript" src="{% static "mysite/js/jquery.cookie.js" %}"></script>
+    <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <meta name="robots" content="NONE,NOARCHIVE">
+    <script type="text/javascript">
+        $(function () {
+            $.ajaxSetup({
+                beforeSend:function (xhr, settings) {
+                    xhr.setRequestHeader("X-CSRFtoken", $.cookie("csrftoken"))
+                }
+            });
+
+            $("#tt").tree({
+                onAfterEdit: function (node) {
+                    if (node.text == "--DELETE--") {
+                        if (!confirm("确认删除此部门？！")) {
+                            return;
+                        }
+                    }
+                    $.ajax({
+                         type: "POST",
+                         url: "edit_remove_department",
+                         data: {new_name: node.text, department_id: node.id},
+                         dataType: "json",
+                         success: function(data){
+                             console.log(data);
+                         }
+                    });
+                }
+            });
+        });
+    </script>
+    <style type="text/css">
+        #department_list_container {
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="department_list_container">
+        <h2>部门关系树（双击修改名称，输入--DELETE--删除）</h2>
+        <div style="margin:20px 0;"></div>
+        <div class="easyui-panel" style="padding:5px">
+            <ul id="tt" class="easyui-tree" data-options="
+                    url: 'department_tree_json',
+                    method: 'get',
+                    animate: true,
+                    onClick: function(node){
+                        $(this).tree('beginEdit',node.target);
+                    }
+                "></ul>
+        </div>
+    </div>
+    <div id="content" class="colM">
+        <h1>Add department</h1>
+        <div id="content-main">
+            <form action="add_department" method="post" id="department_form" novalidate="">
+                {% csrf_token %}
+                <div>
+                    <fieldset class="module aligned ">
+                        <div class="form-row field-name">
+                            <div>
+                                <label class="required" for="id_name">Name:</label>
+                                <input type="text" name="department_name" class="vTextField" maxlength="255" required="" id="id_name">
+                            </div>
+                        </div>
+                         <div class="form-row field-parent_id">
+                            <div>
+                                <label class="required" for="id_parent_id">Parent id:</label>
+                                <input type="number" name="parent_id" value="-1" class="vIntegerField" required="" id="id_parent_id">
+                            </div>
+                         </div>
+
+                    </fieldset>
+                    <div class="submit-row">
+                        <input type="submit" value="Save and continue editing" name="_continue">
+                    </div>
+                </div>
+            </form>
+        </div>
+        <br class="clear">
+    </div>
+</body>
+</html>
