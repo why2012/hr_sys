@@ -1,3 +1,11 @@
+.icon-large-manager{
+	background:url('icons/large_manager.png') no-repeat center center;
+}
+
+.icon-large-position{
+	background:url('icons/large_position.png') no-repeat center center;
+}
+
 .icon-large-level-01{
 	background:url('icons/large-level-01.png') no-repeat center center;
 }

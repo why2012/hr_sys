@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>职位管理</title>
+    <link rel="stylesheet" type="text/css" href="{% static "mysite/css/easyui_themes/default/easyui.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "mysite/css/easyui_themes/icon.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "mysite/css/easyui_demo/demo.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "mysite/css/login_css/base.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "admin/css/forms.css" %}">
+    <script type="text/javascript" src="{% static "mysite/js/jquery.min.js" %}"></script>
+    <script type="text/javascript" src="{% static "mysite/js/jquery.easyui.min.js" %}"></script>
+    <script type="text/javascript" src="{% static "mysite/js/jquery.cookie.js" %}"></script>
+    <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <meta name="robots" content="NONE,NOARCHIVE">
+    <script type="text/javascript">
+        $(function () {
+            $.ajaxSetup({
+                beforeSend:function (xhr, settings) {
+                    xhr.setRequestHeader("X-CSRFtoken", $.cookie("csrftoken"))
+                }
+            });
+        });
+    </script>
+    <style type="text/css">
+        #employee_level_container {
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body style="overflow: hidden;">
+    <div id="employee_level_container">
+        <table id="dg" class="easyui-datagrid" title="" style="width:100%;height:400px"
+            data-options="singleSelect:true,url:'department_json',method:'get',toolbar:toolbar">
+            <thead>
+                <tr>
+                    <th data-options="field:'id',width:200">部门ID</th>
+                    <th data-options="field:'name',width:200">部门</th>
+                    <th data-options="field:'manager_id',width:200">主管ID</th>
+                    <th data-options="field:'manager_name',width:200">主管</th>
+                </tr>
+            </thead>
+        </table>
+        <script type="text/javascript">
+            var toolbar = [{
+                text:'Edit',
+                iconCls:'icon-edit',
+                handler:function(){
+                    var row = $('#dg').datagrid('getSelected');
+                    if (row){
+                        $("#edit_id").val(row.id);
+                        if (row.manager_id != "-")
+                            $('#edit_manager_id').val(row.manager_id);
+                        $('#dlg_edit').dialog('open');
+                    }
+
+                }
+            }];
+        </script>
+    </div>
+
+    <div id="dlg_edit" class="easyui-dialog" title="修改部门主管" data-options="iconCls:'icon-edit'" style="width:600px;height:400px;padding:10px;" closed="true">
+        <div id="edit_content" class="colM">
+            <h1>Edit Position</h1>
+            <div id="edit-content-main">
+                <form action="department_manager_edit" method="post" id="edit_department_form" novalidate="">
+                    {% csrf_token %}
+                    <div>
+                        <fieldset class="module aligned ">
+                            <input type="text" name="department_id" class="vTextField" maxlength="255" required="" id="edit_id", style="display: none;">
+                            <div class="form-row field-parent_id">
+                                <div>
+                                    <label class="required" for="edit_manager_id">Manager ID:</label>
+                                    <input type="number" name="manager_id" value="-1" class="vIntegerField" required="" id="edit_manager_id">
+                                </div>
+                             </div>
+
+                        </fieldset>
+                        <div class="submit-row">
+                            <input type="submit" value="Save and continue editing" name="_continue">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <br class="clear">
+        </div>
+    </div>
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
     {% load static %}
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <title>职级管理</title>
+    <title>职位管理</title>
     <link rel="stylesheet" type="text/css" href="{% static "mysite/css/easyui_themes/default/easyui.css" %}">
     <link rel="stylesheet" type="text/css" href="{% static "mysite/css/easyui_themes/icon.css" %}">
     <link rel="stylesheet" type="text/css" href="{% static "mysite/css/easyui_demo/demo.css" %}">
@@ -32,15 +32,11 @@
 <body style="overflow: hidden;">
     <div id="employee_level_container">
         <table id="dg" class="easyui-datagrid" title="" style="width:100%;height:400px"
-            data-options="singleSelect:true,url:'employee_level_json',method:'get',toolbar:toolbar">
+            data-options="singleSelect:true,url:'position_json',method:'get',toolbar:toolbar">
             <thead>
                 <tr>
-                    <th data-options="field:'level_id',width:150">职级ID</th>
-                    <th data-options="field:'level_order',width:150">职级Order</th>
-                    <th data-options="field:'level_name',width:300">职级</th>
-                    <th data-options="field:'next_level_id',width:150,align:'right'">下一职级ID</th>
-                    <th data-options="field:'next_level_order',width:150,align:'right'">下一职级Order</th>
-                    <th data-options="field:'next_level_name',width:300,align:'right'">下一职级</th>
+                    <th data-options="field:'id',width:200">职位ID</th>
+                    <th data-options="field:'name',width:200">职位</th>
                 </tr>
             </thead>
         </table>
@@ -58,13 +54,13 @@
                 handler:function(){
                     var row = $('#dg').datagrid('getSelected');
                     if (row){
-                        if (!confirm("确认删除职级" + row.level_name + "?!")) {
+                        if (!confirm("确认删除职位：" + row.name + " ?!")) {
                             return;
                         }
                         $.ajax({
                              type: "POST",
-                             url: "employee_level_del",
-                             data: {employee_level_id: row.level_id},
+                             url: "position_del",
+                             data: {position_id: row.id},
                              dataType: "json",
                              success: function(data){
                                  data = parseInt(data);
@@ -83,13 +79,8 @@
                 handler:function(){
                     var row = $('#dg').datagrid('getSelected');
                     if (row){
-                        $("#edit_id").val(row.level_id);
-                        $('#edit_id_name').val(row.level_name);
-                        $('#edit_level_order').val(row.level_order);
-                        var next_level_id = row.next_level_id;
-                        if (next_level_id == "-")
-                            next_level_id = -1;
-                        $('#edit_next_level_id').val(next_level_id);
+                        $("#edit_id").val(row.id);
+                        $('#edit_id_name').val(row.name);
                         $('#dlg').dialog('close');
                         $('#dlg_edit').dialog('open');
                     }
@@ -100,30 +91,18 @@
     </div>
     <div id="dlg" class="easyui-dialog" title="添加职级" data-options="iconCls:'icon-add'" style="width:600px;height:400px;padding:10px;" closed="true">
         <div id="content" class="colM">
-            <h1>Add Level</h1>
+            <h1>Add Position</h1>
             <div id="content-main">
-                <form action="employee_level_add" method="post" id="employee_level_form" novalidate="">
+                <form action="position_add" method="post" id="position_form" novalidate="">
                     {% csrf_token %}
                     <div>
                         <fieldset class="module aligned ">
                             <div class="form-row field-name">
                                 <div>
                                     <label class="required" for="id_name">Name:</label>
-                                    <input type="text" name="employee_level_name" class="vTextField" maxlength="255" required="" id="id_name">
+                                    <input type="text" name="position_name" class="vTextField" maxlength="255" required="" id="id_name">
                                 </div>
                             </div>
-                            <div class="form-row field-parent_id">
-                                <div>
-                                    <label class="required" for="level_order">Level order:</label>
-                                    <input type="number" name="level_order" value="-1" class="vIntegerField" required="" id="level_order">
-                                </div>
-                             </div>
-                             <div class="form-row field-parent_id">
-                                <div>
-                                    <label class="required" for="next_level_id">Next id:</label>
-                                    <input type="number" name="next_level_id" value="-1" class="vIntegerField" required="" id="next_level_id">
-                                </div>
-                             </div>
 
                         </fieldset>
                         <div class="submit-row">
@@ -138,31 +117,19 @@
 
     <div id="dlg_edit" class="easyui-dialog" title="编辑职级" data-options="iconCls:'icon-edit'" style="width:600px;height:400px;padding:10px;" closed="true">
         <div id="edit_content" class="colM">
-            <h1>Edit Level</h1>
+            <h1>Edit Position</h1>
             <div id="edit-content-main">
-                <form action="employee_level_edit" method="post" id="edit_employee_level_form" novalidate="">
+                <form action="position_edit" method="post" id="edit_position_form" novalidate="">
                     {% csrf_token %}
                     <div>
                         <fieldset class="module aligned ">
-                            <input type="text" name="employee_level_id" class="vTextField" maxlength="255" required="" id="edit_id", style="display: none;">
+                            <input type="text" name="position_id" class="vTextField" maxlength="255" required="" id="edit_id", style="display: none;">
                             <div class="form-row field-name">
                                 <div>
                                     <label class="required" for="edit_id_name">Name:</label>
-                                    <input type="text" name="employee_level_name" class="vTextField" maxlength="255" required="" id="edit_id_name">
+                                    <input type="text" name="position_name" class="vTextField" maxlength="255" required="" id="edit_id_name">
                                 </div>
                             </div>
-                            <div class="form-row field-parent_id">
-                                <div>
-                                    <label class="required" for="edit_level_order">Level order:</label>
-                                    <input type="number" name="level_order" value="-1" class="vIntegerField" required="" id="edit_level_order">
-                                </div>
-                             </div>
-                             <div class="form-row field-parent_id">
-                                <div>
-                                    <label class="required" for="edit_next_level_id">Next id:</label>
-                                    <input type="number" name="next_level_id" value="-1" class="vIntegerField" required="" id="edit_next_level_id">
-                                </div>
-                             </div>
 
                         </fieldset>
                         <div class="submit-row">

@@ -31,6 +31,7 @@ class UserGroupMenuItem(models.Model):
 class Department(models.Model):
     name = models.CharField(max_length=255)
     parent_id = models.IntegerField(default=-1)
+    manager = models.ForeignKey("Employee", null=True, on_delete=models.DO_NOTHING, related_name="department_manager")
 
 # 员工职级
 #       P5              T5
@@ -59,10 +60,10 @@ class EmployeePosition(models.Model):
 # 员工信息
 class Employee(models.Model):
     name = models.CharField(max_length=255)
-    gender = models.CharField(max_length=50, choices=((0, "male"), (1, "female")))
+    gender = models.CharField(max_length=50, choices=(('0', "male"), ('1', "female")))
     email = models.CharField(max_length=255, null=True)
     phone = models.CharField(max_length=50, null=True)
-    manager_id = models.IntegerField()
+    manager_id = models.IntegerField(default=-1)
     department = models.ForeignKey(Department, on_delete=models.DO_NOTHING)
     province_name = models.CharField(max_length=50)
     city_name = models.CharField(max_length=50)

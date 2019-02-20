@@ -1,9 +1,10 @@
+# coding : utf-8
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.db import connection
 from hr_sys.decorators import checklogin
 import json
-from hr_sys.models import Department, EmployeeLevel
+from hr_sys.models import Department, EmployeeLevel, EmployeePosition
 from jinja2 import utils
 from hr_sys.libs.sql_helper import namedtuplefetchall
 
@@ -134,3 +135,73 @@ def employee_level_del(request):
     EmployeeLevel.objects.filter(next_level_id=employee_level_id).update(next_level_id=-1)
     return HttpResponse(1)
 
+@checklogin()
+def position_list(request):
+    context = {}
+    return render(request, 'position_list.html', context)
+
+@checklogin()
+def position_json(request):
+    positions = EmployeePosition.objects.all()
+    json_positions = {"total": len(positions), "rows": []}
+    for item in positions:
+        json_positions["rows"].append({"id": item.id, "name": item.name})
+    return HttpResponse(json.dumps(json_positions, ensure_ascii = False), content_type="application/json, charset=utf-8")
+
+@checklogin()
+def position_add(request):
+    position_name = request.POST.get("position_name")
+    if not position_name:
+        return redirect("position_list")
+    position_name = utils.escape(position_name)
+    new_position = EmployeePosition(name=position_name)
+    new_position.save()
+    return redirect("position_list")
+
+@checklogin()
+def position_edit(request):
+    position_id = request.POST.get("position_id")
+    position_name = request.POST.get("position_name")
+    if not position_id or not position_name:
+        return redirect("position_list")
+    position_id = int(position_id)
+    position_name = utils.escape(position_name)
+    EmployeePosition.objects.filter(id=position_id).update(name=position_name)
+    return redirect("position_list")
+
+@checklogin()
+def position_del(request):
+    position_id = request.POST.get("position_id")
+    if not position_id:
+        return HttpResponse(0)
+    position_id = int(position_id)
+    EmployeePosition.objects.filter(id=position_id).delete()
+    return HttpResponse(1)
+
+@checklogin()
+def department_manager(request):
+    context = {}
+    return render(request, 'department_manager.html', context)
+
+@checklogin()
+def department_json(request):
+    departments = Department.objects.all()
+    json_positions = {"total": len(departments), "rows": []}
+    for item in departments:
+        if item.manager:
+            json_positions["rows"].append({"id": item.id, "name": item.name, "manager_id": item.manager.id, "manager_name": item.manager.name})
+        else:
+            json_positions["rows"].append({"id": item.id, "name": item.name, "manager_id": "-", "manager_name": "-"})
+
+    return HttpResponse(json.dumps(json_positions, ensure_ascii = False), content_type="application/json, charset=utf-8")
+
+@checklogin()
+def department_manager_edit(request):
+    manager_id = request.POST.get("manager_id")
+    department_id = request.POST.get("department_id")
+    if not manager_id or not department_id:
+        return redirect("department_manager")
+    manager_id = int(manager_id)
+    department_id = int(department_id)
+    Department.objects.filter(id=department_id).update(manager_id=manager_id)
+    return redirect("department_manager")
