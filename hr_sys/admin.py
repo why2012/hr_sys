@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import UserGroup, User, MenuItem, UserGroupMenuItem, Department
+from .models import UserGroup, User, MenuItem, UserGroupMenuItem, Department, EmployeeLevel
 # Register your models here.
-admin.site.register([UserGroup, User, MenuItem, UserGroupMenuItem, Department])
+admin.site.register([UserGroup, User, MenuItem, UserGroupMenuItem, Department, EmployeeLevel])
 

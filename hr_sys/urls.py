@@ -10,4 +10,9 @@ urlpatterns = [
     path('department_tree_json', department_views.department_tree_json, name="department_tree_json"),
     path('add_department', department_views.add_department, name='add_department'),
     path('edit_remove_department', department_views.edit_remove_department, name='edit_remove_department'),
+    path('employee_level', department_views.department_level, name='employee_level'),
+    path('employee_level_json', department_views.employee_level_json, name='employee_level_json'),
+    path('employee_level_add', department_views.employee_level_add, name='employee_level_add'),
+    path('employee_level_edit', department_views.employee_level_edit, name='employee_level_edit'),
+    path('employee_level_del', department_views.employee_level_del, name='employee_level_del'),
 ]
