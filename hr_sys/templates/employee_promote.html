@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>晋升管理</title>
+    <link rel="stylesheet" type="text/css" href="{% static "mysite/css/easyui_themes/default/easyui.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "mysite/css/easyui_themes/icon.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "mysite/css/easyui_demo/demo.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "mysite/css/login_css/base.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "admin/css/forms.css" %}">
+    <script type="text/javascript" src="{% static "mysite/js/jquery.min.js" %}"></script>
+    <script type="text/javascript" src="{% static "mysite/js/jquery.easyui.min.js" %}"></script>
+    <script type="text/javascript" src="{% static "mysite/js/jquery.cookie.js" %}"></script>
+    <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <meta name="robots" content="NONE,NOARCHIVE">
+    <script type="text/javascript">
+        $(function () {
+            $.ajaxSetup({
+                beforeSend:function (xhr, settings) {
+                    xhr.setRequestHeader("X-CSRFtoken", $.cookie("csrftoken"))
+                }
+            });
+
+            $("#dg").datagrid("hideColumn", "employee_position_id");
+            $("#dg").datagrid("hideColumn", "employee_level_id");
+        });
+    </script>
+    <style type="text/css">
+        #employee_level_container {
+            margin-left: 10px;
+        }
+
+        #edit_content, #search_content {
+            padding: 20px 40px;
+        }
+    </style>
+</head>
+<body style="overflow: hidden;">
+    <div id="employee_list_container" style="">
+        <table id="dg" class="easyui-datagrid" title="" style="width:100%;height:800px"
+            data-options="singleSelect:true,url:'{{ grid_url }}',method:'get',toolbar:toolbar" pagination="true">
+            <thead>
+                <tr>
+                    <th data-options="field:'employee_id',width:150,align:'center'">员工ID</th>
+                    <th data-options="field:'employee_name',width:150,align:'center'">姓名</th>
+                    <th data-options="field:'employee_gender',width:150,align:'center'">性别</th>
+                    <th data-options="field:'employee_position_id',width:150,align:'center'">职位ID</th>
+                    <th data-options="field:'employee_position',width:150,align:'center'">职位</th>
+                    <th data-options="field:'manager_id',width:150,align:'center'">主管ID</th>
+                    <th data-options="field:'manager_name',width:150,align:'center'">主管姓名</th>
+                    <th data-options="field:'department_id',width:150,align:'center'">部门ID</th>
+                    <th data-options="field:'department_name',width:150,align:'center'">所属部门</th>
+                    <th data-options="field:'province_name',width:150,align:'center'">省份</th>
+                    <th data-options="field:'city_name',width:150,align:'center'">城市</th>
+                    <th data-options="field:'salary',width:150,align:'center'">薪资(K/月)</th>
+                    <th data-options="field:'employee_level_id',width:150,align:'center'">职级ID</th>
+                    <th data-options="field:'employee_level',width:150,align:'center'">职级</th>
+                    <th data-options="field:'employee_status',width:150,align:'center'">职位状态</th>
+                    <th data-options="field:'employee_email',width:150,align:'center'">Email</th>
+                    <th data-options="field:'employee_phone',width:150,align:'center'">电话号码</th>
+                    <th data-options="field:'induction_datetime',width:150,align:'center'">入职时间</th>
+                </tr>
+            </thead>
+        </table>
+        <script type="text/javascript">
+            var toolbar = [{
+                text:'Promote',
+                iconCls:'icon-edit',
+                handler:function(){
+                    var row = $('#dg').datagrid('getSelected');
+                    if (row){
+                        if (row.employee_status == "离职") {
+                            alert("该员工已离职");
+                            $('#dlg_edit').dialog('close');
+                            return;
+                        }
+                        $('#edit_employee_id').val(row.employee_id);
+                        $('#edit_id_level').val(row.employee_level_id);
+                        $('#dlg_search').dialog('close')
+                        $('#dlg_edit').dialog('open');
+                    }
+
+                }
+            }, {
+                text: 'Search',
+                iconCls:'icon-search',
+                handler:function() {
+                        $('#dlg_search').dialog('open')
+                        $('#dlg_edit').dialog('close');
+                }
+            }, {
+                text: 'Reset',
+                iconCls:'icon-redo',
+                handler:function() {
+                        $('#dg').datagrid('options').url = $('#dg').datagrid('options').url.split("?")[0];
+                        $("#dg").datagrid('reload');
+                }
+            }];
+        </script>
+    </div>
+
+    <div id="dlg_edit" class="easyui-dialog" title="晋升管理" data-options="iconCls:'icon-edit'" style="width:600px;height:400px;padding:10px;" closed="true">
+        <div id="edit_content" class="colM">
+            <h1>Employee Promote</h1>
+            <div id="edit-content-main">
+                <form action="employee_promote" method="post" id="edit_employee_form" novalidate="">
+                    {% csrf_token %}
+                    <div>
+                        <fieldset class="module aligned ">
+                            <input type="hidden" name="employee_id" class="vTextField" maxlength="255" required="" id="edit_employee_id">
+
+                            <div class="form-row field-level">
+                                <div>
+                                    <label class="required" for="edit_id_level">Level:</label>
+                                    <div class="related-widget-wrapper">
+                                        <select name="to_level_id" required="" id="edit_id_level">
+                                            {% for item in levels %}
+                                              <option value="{{ item.id }}">{{ item.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </fieldset>
+                        <div class="submit-row">
+                            <input type="submit" value="Save and continue editing" name="_continue">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <br class="clear">
+        </div>
+    </div>
+
+    <div id="dlg_search" class="easyui-dialog" title="搜索员工信息" data-options="iconCls:'icon-search'" style="width:600px;height:400px;padding:10px;" closed="true">
+        <div id="search_content" class="colM">
+            <h1>Search Employee</h1>
+            <div id="search-content-main">
+                <form action="employee_promote_list" method="post" id="search_employee_form" novalidate="">
+                    {% csrf_token %}
+                    <div>
+                        <fieldset class="module aligned ">
+                            <div class="form-row field-name">
+                                <div>
+                                    <label class="required" for="search_id_name">Name:</label>
+                                     <input type="text" name="name" class="vTextField" maxlength="255" required="" id="search_id_name">
+                                </div>
+                            </div>
+                            <div class="form-row field-gender">
+                                <div>
+                                    <label class="required" for="search_id_gender">Gender:</label>
+                                    <select name="gender" required="" id="search_id_gender">
+                                        <option value="ALL">----------</option>
+                                        <option value="0">male</option>
+                                        <option value="1">female</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row field-email">
+                                <div>
+                                    <label class="required" for="search_id_email">Email:</label>
+                                    <input type="text" name="email" class="vTextField" maxlength="255" required="" id="search_id_email">
+                                </div>
+                            </div>
+                            <div class="form-row field-phone">
+                                <div>
+                                    <label class="required" for="search_id_phone">Phone:</label>
+                                    <input type="text" name="phone" class="vTextField" maxlength="50" required="" id="search_id_phone">
+                                </div>
+                            </div>
+                            <div class="form-row field-manager_id">
+                                <div>
+                                    <label class="required" for="search_id_manager_id">Manager id:</label>
+                                    <input type="number" name="manager_id" value="" class="vIntegerField" required="" id="search_id_manager_id">
+                                </div>
+                            </div>
+                            <div class="form-row field-manager_id">
+                                <div>
+                                    <label class="required" for="search_manager_name">Manager Name:</label>
+                                    <input type="text" name="manager_name" value="" class="vTextField"  maxlength="50" required="" id="search_manager_name">
+                                </div>
+                            </div>
+                            <div class="form-row field-department">
+                                <div>
+                                    <label class="required" for="search_id_department">Department:</label>
+                                    <div class="related-widget-wrapper">
+                                        <select name="department" required="" id="search_id_department">
+                                            <option value="ALL">----------</option>
+                                            {% for item in departments %}
+                                              <option value="{{ item.id }}">{{ item.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                             </div>
+                            <div class="form-row field-province_name">
+                                <div>
+                                    <label class="required" for="search_id_province_name">Province name:</label>
+                                    <input type="text" name="province_name" class="vTextField" maxlength="50" required="" id="search_id_province_name">
+                                </div>
+                            </div>
+                            <div class="form-row field-city_name">
+                                <div>
+                                    <label class="required" for="search_id_city_name">City name:</label>
+                                    <input type="text" name="city_name" class="vTextField" maxlength="50" required="" id="search_id_city_name">
+                                </div>
+                            </div>
+                            <div class="form-row field-level">
+                                <div>
+                                    <label class="required" for="search_id_level">Level:</label>
+                                    <div class="related-widget-wrapper">
+                                        <select name="level" required="" id="search_id_level">
+                                            <option value="ALL">----------</option>
+                                            {% for item in levels %}
+                                              <option value="{{ item.id }}">{{ item.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-row field-position">
+                                <div>
+                                    <label class="required" for="search_id_position">Position:</label>
+                                        <div class="related-widget-wrapper">
+                                            <select name="position" required="" id="search_id_position">
+                                                <option value="ALL">----------</option>
+                                                {% for item in positions %}
+                                                    <option value="{{ item.id }}">{{ item.name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                </div>
+                            </div>
+                            <div class="form-row field-status">
+                                <div>
+                                    <label class="required" for="search_id_status">Status:</label>
+                                    <select name="status" required="" id="search_id_status">
+                                        <option value="ALL">----------</option>
+                                        <option value="0">normal</option>
+                                        <option value="1">desert</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </fieldset>
+                        <div class="submit-row">
+                            <input type="submit" value="Search" name="_continue">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <br class="clear">
+        </div>
+    </div>
+</body>
+</html>

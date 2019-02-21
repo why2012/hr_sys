@@ -59,6 +59,7 @@
                     <th data-options="field:'employee_status',width:150,align:'center'">职位状态</th>
                     <th data-options="field:'employee_email',width:150,align:'center'">Email</th>
                     <th data-options="field:'employee_phone',width:150,align:'center'">电话号码</th>
+                    <th data-options="field:'induction_datetime',width:150,align:'center'">入职时间</th>
                 </tr>
             </thead>
         </table>
@@ -120,7 +121,24 @@
                         $('#edit_id_salary').val(row.salary);
                         $('#edit_id_level').val(row.employee_level_id);
                         $('#edit_id_position').val(row.employee_position_id);
-                        $('#status').val(row.employee_status);
+                        employee_status = 0
+                        if (row.employee_status == "离职")
+                            employee_status = 1
+                        $('#edit_id_status').val(employee_status);
+
+                        // datetime formatting
+                        if (row.induction_datetime != "-") {
+                            var date = row.induction_datetime.split(" ")[0]
+                            var time = row.induction_datetime.split(" ")[1]
+                            var Year = date.split("-")[0]
+                            var Month = date.split("-")[1]
+                            var Date = date.split("-")[2]
+                            var Hour = time.split(":")[0]
+                            var Minute = time.split(":")[1]
+                            var Second = time.split(":")[2]
+
+                            $('#edit_induction_datetime').datetimebox({value: Month + "/" + Date + "/" + Year + " " + Hour + ":" + Minute + ":" + Second});
+                        }
 
                         $('#dlg').dialog('close');
                         $('#dlg_search').dialog('close')
@@ -250,6 +268,12 @@
                                     </select>
                                 </div>
                             </div>
+                            <div class="form-row field-city_name">
+                                <div>
+                                    <label class="required" for="induction_datetime">Induction datetime:</label>
+                                    <input class="easyui-datetimebox" name="induction_datetime" maxlength="50"  id="induction_datetime">
+                                </div>
+                            </div>
                         </fieldset>
                         <div class="submit-row">
                             <input type="submit" value="Save and continue editing" name="_continue">
@@ -366,6 +390,13 @@
                                     </select>
                                 </div>
                             </div>
+                            <div class="form-row field-city_name">
+                                <div>
+                                    <label class="required" for="edit_induction_datetime">Induction datetime:</label>
+                                    <input class="easyui-datetimebox" name="induction_datetime" maxlength="50"  id="edit_induction_datetime">
+                                </div>
+                            </div>
+
                         </fieldset>
                         <div class="submit-row">
                             <input type="submit" value="Save and continue editing" name="_continue">

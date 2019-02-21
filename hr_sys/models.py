@@ -71,6 +71,7 @@ class Employee(models.Model):
     level = models.ForeignKey(EmployeeLevel, on_delete=models.DO_NOTHING)
     position = models.ForeignKey(EmployeePosition, on_delete=models.DO_NOTHING)
     status = models.SmallIntegerField(choices=((0, "normal"),(1, "desert")))
+    induction_date = models.DateTimeField(null=True)
 
 # 员工晋升记录
 class EmployPromoteHistory(models.Model):

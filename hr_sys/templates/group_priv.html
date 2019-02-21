@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>用户组权限管理</title>
+    <link rel="stylesheet" type="text/css" href="{% static "mysite/css/easyui_themes/default/easyui.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "mysite/css/easyui_themes/icon.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "mysite/css/easyui_demo/demo.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "mysite/css/login_css/base.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "admin/css/forms.css" %}">
+    <script type="text/javascript" src="{% static "mysite/js/jquery.min.js" %}"></script>
+    <script type="text/javascript" src="{% static "mysite/js/jquery.easyui.min.js" %}"></script>
+    <script type="text/javascript" src="{% static "mysite/js/jquery.cookie.js" %}"></script>
+    <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <meta name="robots" content="NONE,NOARCHIVE">
+    <script type="text/javascript">
+        $(function () {
+            $.ajaxSetup({
+                beforeSend:function (xhr, settings) {
+                    xhr.setRequestHeader("X-CSRFtoken", $.cookie("csrftoken"))
+                }
+            });
+        });
+    </script>
+    <style type="text/css">
+        #priv_tree {
+            margin-left: 10px;
+            margin-bottom: 10px;
+        }
+
+        #employee_level_container {
+            margin-left: 10px;
+        }
+
+        #edit_content {
+            padding: 20px 40px;
+        }
+    </style>
+</head>
+<body>
+<!DOCTYPE html>
+<html lang="en">
+<body style="overflow: hidden;">
+    <div id="priv_tree">
+        <h2>菜单关系树（添加父级权限自动包含子级菜单）</h2>
+        <div style="margin:20px 0;"></div>
+        <div class="easyui-panel" style="padding:5px">
+            <ul id="tt" class="easyui-tree" data-options="
+                    url: 'group_priv_tree_json',
+                    method: 'get',
+                    animate: true
+                ">
+            </ul>
+        </div>
+    </div>
+    <div id="employee_level_container">
+        <table id="dg" class="easyui-datagrid" title="" style="width:100%;height:400px"
+            data-options="singleSelect:true,url:'group_priv_json',method:'get',toolbar:toolbar">
+            <thead>
+                <tr>
+                    <th data-options="field:'priv_id',width:150">权限ID</th>
+                    <th data-options="field:'group_id',width:150">用户组ID</th>
+                    <th data-options="field:'group_name',width:150">用户组</th>
+                    <th data-options="field:'menu_id',width:300">菜单ID</th>
+                    <th data-options="field:'menu_name',width:300">菜单</th>
+                </tr>
+            </thead>
+        </table>
+        <script type="text/javascript">
+            var toolbar = [{
+                text:'Add',
+                iconCls:'icon-add',
+                handler:function(){
+                    $('#dlg_edit').dialog('close')
+                    $('#dlg').dialog('open')
+                }
+            },{
+                text:'Del',
+                iconCls:'icon-cancel',
+                handler:function(){
+                    var row = $('#dg').datagrid('getSelected');
+                    if (row){
+                        if (!confirm("确认删除此权限?!")) {
+                            return;
+                        }
+                        if (row.priv_id in [1, 2, 3]) {
+                            alert("不能删除此权限！");
+                            return;
+                        }
+                        $.ajax({
+                             type: "POST",
+                             url: "group_priv_del",
+                             data: {group_priv_id: row.priv_id},
+                             dataType: "json",
+                             success: function(data){
+                                 data = parseInt(data);
+                                 console.log(data);
+                                 if (data == 1) {
+                                     var rowIndex = $('#dg').datagrid('getRowIndex', row);
+                                     $('#dg').datagrid('deleteRow', rowIndex);
+                                 }
+                             }
+                        });
+                    }
+                }
+            },{
+                text:'Edit',
+                iconCls:'icon-edit',
+                handler:function(){
+                    var row = $('#dg').datagrid('getSelected');
+                    if (row){
+                        $("#edit_group_priv_id").val(row.priv_id);
+                        $("#edit_menu_item_id").val(row.menu_id);
+                        $('#dlg').dialog('close');
+                        $('#dlg_edit').dialog('open');
+                    }
+
+                }
+            }];
+        </script>
+    </div>
+    <div id="dlg" class="easyui-dialog" title="添加用户组权限" data-options="iconCls:'icon-add'" style="width:600px;height:400px;padding:10px;" closed="true">
+        <div id="content" class="colM">
+            <h1>Add User Group Privilege</h1>
+            <div id="content-main">
+                <form action="group_priv_add" method="post" id="group_priv_add_form" novalidate="">
+                    {% csrf_token %}
+                    <div>
+                        <fieldset class="module aligned ">
+                            <div class="form-row field-department">
+                                <div>
+                                    <label class="required" for="user_group_id">User Group:</label>
+                                    <div class="related-widget-wrapper">
+                                        <select name="user_group_id" required="" id="user_group_id">
+                                            {% for item in groups %}
+                                              <option value="{{ item.id }}">{{ item.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                             </div>
+                            <div class="form-row field-department">
+                                <div>
+                                    <label class="required" for="menu_item_id">MenuItem:</label>
+                                    <div class="related-widget-wrapper">
+                                        <select name="menu_item_id" required="" id="menu_item_id">
+                                            {% for item in menuItems %}
+                                              <option value="{{ item.id }}">[{{ item.id }}]{{ item.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                             </div>
+
+                        </fieldset>
+                        <div class="submit-row">
+                            <input type="submit" value="Save and continue editing" name="_continue">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <br class="clear">
+        </div>
+    </div>
+
+    <div id="dlg_edit" class="easyui-dialog" title="编辑用户组" data-options="iconCls:'icon-edit'" style="width:600px;height:400px;padding:10px;" closed="true">
+        <div id="edit_content" class="colM">
+            <h1>Edit User Group Privilege</h1>
+            <div id="edit-content-main">
+                <form action="group_priv_edit" method="post" id="edit_group_priv_form" novalidate="">
+                    {% csrf_token %}
+                    <div>
+                        <input type="hidden" name="group_priv_id" id="edit_group_priv_id">
+                        <fieldset class="module aligned ">
+                            <div class="form-row field-department">
+                                <div>
+                                    <label class="required" for="edit_menu_item_id">MenuItem:</label>
+                                    <div class="related-widget-wrapper">
+                                        <select name="menu_item_id" required="" id="edit_menu_item_id">
+                                            {% for item in menuItems %}
+                                              <option value="{{ item.id }}">[{{ item.id }}]{{ item.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                             </div>
+
+                        </fieldset>
+                        <div class="submit-row">
+                            <input type="submit" value="Save and continue editing" name="_continue">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <br class="clear">
+        </div>
+    </div>
+</body>
+</html>
+</body>
+</html>

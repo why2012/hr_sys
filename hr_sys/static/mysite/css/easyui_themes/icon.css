@@ -1,3 +1,15 @@
+.icon-large-priv{
+	background:url('icons/large_priv.png') no-repeat center center;
+}
+
+.icon-large-group{
+	background:url('icons/large_group.png') no-repeat center center;
+}
+
+.icon-large-user{
+	background:url('icons/large_user.png') no-repeat center center;
+}
+
 .icon-large-manager{
 	background:url('icons/large_manager.png') no-repeat center center;
 }

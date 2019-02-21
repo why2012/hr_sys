@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>用户组管理</title>
+    <link rel="stylesheet" type="text/css" href="{% static "mysite/css/easyui_themes/default/easyui.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "mysite/css/easyui_themes/icon.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "mysite/css/easyui_demo/demo.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "mysite/css/login_css/base.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "admin/css/forms.css" %}">
+    <script type="text/javascript" src="{% static "mysite/js/jquery.min.js" %}"></script>
+    <script type="text/javascript" src="{% static "mysite/js/jquery.easyui.min.js" %}"></script>
+    <script type="text/javascript" src="{% static "mysite/js/jquery.cookie.js" %}"></script>
+    <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <meta name="robots" content="NONE,NOARCHIVE">
+    <script type="text/javascript">
+        $(function () {
+            $.ajaxSetup({
+                beforeSend:function (xhr, settings) {
+                    xhr.setRequestHeader("X-CSRFtoken", $.cookie("csrftoken"))
+                }
+            });
+        });
+    </script>
+    <style type="text/css">
+        #employee_level_container {
+            margin-left: 10px;
+        }
+
+        #edit_content {
+            padding: 20px 40px;
+        }
+    </style>
+</head>
+<body>
+<!DOCTYPE html>
+<html lang="en">
+<body style="overflow: hidden;">
+    <div id="employee_level_container">
+        <table id="dg" class="easyui-datagrid" title="" style="width:100%;height:400px"
+            data-options="singleSelect:true,url:'usergroup_list_json',method:'get',toolbar:toolbar">
+            <thead>
+                <tr>
+                    <th data-options="field:'group_id',width:150">用户组ID</th>
+                    <th data-options="field:'group_name',width:150">用户组</th>
+                    <th data-options="field:'group_remark',width:300">备注</th>
+                </tr>
+            </thead>
+        </table>
+        <script type="text/javascript">
+            var toolbar = [{
+                text:'Add',
+                iconCls:'icon-add',
+                handler:function(){
+                    $('#dlg_edit').dialog('close')
+                    $('#dlg').dialog('open')
+                }
+            },{
+                text:'Del',
+                iconCls:'icon-cancel',
+                handler:function(){
+                    var row = $('#dg').datagrid('getSelected');
+                    if (row){
+                        if (!confirm("确认删除用户组: " + row.group_name + " ?!")) {
+                            return;
+                        }
+                        if (row.group_id == 1) {
+                            alert("不能删除此用户组！");
+                            return;
+                        }
+                        $.ajax({
+                             type: "POST",
+                             url: "group_del",
+                             data: {group_id: row.group_id},
+                             dataType: "json",
+                             success: function(data){
+                                 data = parseInt(data);
+                                 console.log(data);
+                                 if (data == 1) {
+                                     var rowIndex = $('#dg').datagrid('getRowIndex', row);
+                                     $('#dg').datagrid('deleteRow', rowIndex);
+                                 }
+                             }
+                        });
+                    }
+                }
+            },{
+                text:'Edit',
+                iconCls:'icon-edit',
+                handler:function(){
+                    var row = $('#dg').datagrid('getSelected');
+                    if (row){
+                        $("#edit_group_id").val(row.group_id);
+                        $("#edit_group_name").val(row.group_name);
+                        $("#edit_group_remark").val(row.group_remark);
+                        $('#dlg').dialog('close');
+                        $('#dlg_edit').dialog('open');
+                    }
+
+                }
+            }];
+        </script>
+    </div>
+    <div id="dlg" class="easyui-dialog" title="添加用户组" data-options="iconCls:'icon-add'" style="width:600px;height:400px;padding:10px;" closed="true">
+        <div id="content" class="colM">
+            <h1>Add User Group</h1>
+            <div id="content-main">
+                <form action="group_add" method="post" id="user_add_form" novalidate="">
+                    {% csrf_token %}
+                    <div>
+                        <fieldset class="module aligned ">
+                            <div class="form-row field-name">
+                                <div>
+                                    <label class="required" for="id_name">Name:</label>
+                                    <input type="text" name="group_name" class="vTextField" maxlength="255" required="" id="group_name">
+                                </div>
+                            </div>
+                            <div class="form-row field-parent_id">
+                                <div>
+                                    <label class="required" for="user_email">Remark:</label>
+                                    <input type="text" name="group_remark" class="vTextField" maxlength="255" required=""  required="" id="group_remark">
+                                </div>
+                             </div>
+
+                        </fieldset>
+                        <div class="submit-row">
+                            <input type="submit" value="Save and continue editing" name="_continue">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <br class="clear">
+        </div>
+    </div>
+
+    <div id="dlg_edit" class="easyui-dialog" title="编辑用户组" data-options="iconCls:'icon-edit'" style="width:600px;height:400px;padding:10px;" closed="true">
+        <div id="edit_content" class="colM">
+            <h1>Edit User Group</h1>
+            <div id="edit-content-main">
+                <form action="group_edit" method="post" id="edit_user_form" novalidate="">
+                    {% csrf_token %}
+                    <div>
+                        <input type="hidden" name="group_id" id="edit_group_id">
+                        <fieldset class="module aligned ">
+                            <div class="form-row field-name">
+                                <div>
+                                    <label class="required" for="edit_group_name">Name:</label>
+                                    <input type="text" name="group_name" class="vTextField" maxlength="255" required="" id="edit_group_name">
+                                </div>
+                            </div>
+                            <div class="form-row field-parent_id">
+                                <div>
+                                    <label class="required" for="edit_group_remark">Remark:</label>
+                                    <input type="text" name="group_remark" class="vTextField" maxlength="255" required=""  required="" id="edit_group_remark">
+                                </div>
+                             </div>
+
+                        </fieldset>
+                        <div class="submit-row">
+                            <input type="submit" value="Save and continue editing" name="_continue">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <br class="clear">
+        </div>
+    </div>
+</body>
+</html>
+</body>
+</html>
