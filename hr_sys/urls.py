@@ -31,4 +31,6 @@ urlpatterns = [
     path('employee_add', employee_views.employee_add, name='employee_add'),
     path('employee_edit', employee_views.employee_edit, name='employee_edit'),
     path('employee_del', employee_views.employee_del, name='employee_del'),
+    path('employee_promote_list', employee_views.employee_promote_list, name='employee_promote_list'),
+    path('employee_promote', employee_views.employee_promote, name='employee_promote'),
 ]

@@ -4,6 +4,7 @@ from django.shortcuts import redirect
 from django.contrib.auth import hashers
 from hr_sys.models import User
 from django.conf import settings
+from hr_sys.decorators import checklogin
 import logging
 logger = logging.getLogger(__name__)
 
@@ -32,4 +33,9 @@ def logout(request):
     if "userid" in request.session:
         del request.session["userid"]
     return redirect("login")
+
+@checklogin()
+def add_a_user(request):
+    context = {}
+    return render(request, "add_a_user.html", context)
 

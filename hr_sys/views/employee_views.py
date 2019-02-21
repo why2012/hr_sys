@@ -2,17 +2,19 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.db import connection
+from django.db import IntegrityError, transaction
 from hr_sys.decorators import checklogin
 import json
-from hr_sys.models import Department, EmployeeLevel, Employee, EmployeePosition
+from hr_sys.models import Department, EmployeeLevel, Employee, EmployeePosition, EmployPromoteHistory
 from jinja2 import utils
 from hr_sys.libs.sql_helper import namedtuplefetchall
 import logging
 from urllib.parse import urlencode
+import time
 logger = logging.getLogger(__name__)
 
 @checklogin()
-def employee_list(request):
+def employee_list(request, template_name = "employee_list.html"):
     context = {}
     departments = Department.objects.all()
     levels = EmployeeLevel.objects.all()
@@ -64,7 +66,7 @@ def employee_list(request):
             grid_url += "?" + urlencode(valid_params)
         context["grid_url"] = grid_url
 
-    return render(request, 'employee_list.html', context)
+    return render(request, template_name, context)
 
 @checklogin()
 def employee_list_json(request):
@@ -118,7 +120,8 @@ def employee_list_json(request):
                       emp.id as employee_id, emp.name as employee_name, emp.gender as employee_gender, pos.name as employee_position,
                       emp2.id as manager_id, emp2.name as manager_name, dep.id as department_id, dep.name as department_name, 
                       emp.province_name, emp.city_name, emp.salary, lev.name as employee_level, emp.status as employee_status, 
-                      emp.email as employee_email, emp.phone as employee_phone, lev.id as employee_level_id, pos.id as employee_position_id
+                      emp.email as employee_email, emp.phone as employee_phone, lev.id as employee_level_id, pos.id as employee_position_id,
+                      emp.induction_date as induction_datetime
                     from  
                       %s as emp left join %s as emp2 on emp.manager_id=emp2.id 
                       inner join %s as dep on emp.department_id=dep.id 
@@ -136,7 +139,8 @@ def employee_list_json(request):
                       emp.id as employee_id, emp.name as employee_name, emp.gender as employee_gender, pos.name as employee_position,
                       emp2.id as manager_id, emp2.name as manager_name, dep.id as department_id, dep.name as department_name, 
                       emp.province_name, emp.city_name, emp.salary, lev.name as employee_level, emp.status as employee_status, 
-                      emp.email as employee_email, emp.phone as employee_phone, lev.id as employee_level_id, pos.id as employee_position_id
+                      emp.email as employee_email, emp.phone as employee_phone, lev.id as employee_level_id, pos.id as employee_position_id,
+                      emp.induction_date as induction_datetime
                     from  
                       """ + emp_tablename + """ as emp left join """ + emp_tablename + """ as emp2 on emp.manager_id=emp2.id 
                       inner join """ + dep_tablename + """ as dep on emp.department_id=dep.id 
@@ -171,13 +175,17 @@ def employee_list_json(request):
             employee_status = "在职"
         else:
             employee_status = "离职"
+        induction_datetime = str(item.induction_datetime)
+        if induction_datetime == "None":
+            induction_datetime = "-"
         employee_list["rows"].append({
             "employee_id": item.employee_id, "employee_name": item.employee_name, "employee_gender": employee_gender,
             "employee_position": item.employee_position, "manager_id": manager_id, "manager_name": manager_name,
             "employee_position_id": item.employee_position_id, "employee_level_id": item.employee_level_id,
             "department_id": item.department_id, "department_name": item.department_name, "province_name": item.province_name,
             "city_name": item.city_name, "salary": item.salary, "employee_level": item.employee_level,
-            "employee_status": employee_status, "employee_email": item.employee_email, "employee_phone": item.employee_phone
+            "employee_status": employee_status, "employee_email": item.employee_email, "employee_phone": item.employee_phone,
+            "induction_datetime": induction_datetime
         })
     return HttpResponse(json.dumps(employee_list, ensure_ascii=False), content_type="application/json, charset=utf-8")
 
@@ -195,6 +203,7 @@ def employee_add(request):
     employee_level_id = request.POST.get("level")
     employee_position_id = request.POST.get("position")
     employee_status = request.POST.get("status")
+    induction_datetime = request.POST.get("induction_datetime")
     not_null = [employee_name, employee_gender, employee_manager_id, employee_department_id, province_name, city_name,
                 employee_salary, employee_level_id, employee_position_id, employee_status]
     for item in not_null:
@@ -213,6 +222,8 @@ def employee_add(request):
     employee_level_id = int(employee_level_id)
     employee_position_id = int(employee_position_id)
     employee_status = int(employee_status)
+    induction_datetime = utils.escape(induction_datetime)
+    induction_datetime = time.strftime("%Y-%m-%d %H:%M:%S", time.strptime(induction_datetime, "%m/%d/%Y %H:%M:%S"))
 
     if employee_manager_id == -1:
         department = Department.objects.get(pk=employee_department_id)
@@ -223,7 +234,8 @@ def employee_add(request):
     new_employee = Employee(name=employee_name, gender=employee_gender, email=employee_email, phone=employee_phone,
                             manager_id=employee_manager_id, department_id=employee_department_id,
                             province_name=province_name, city_name=city_name, salary=employee_salary,
-                            level_id=employee_level_id, position_id=employee_position_id, status=employee_status)
+                            level_id=employee_level_id, position_id=employee_position_id, status=employee_status,
+                            induction_date=induction_datetime)
     new_employee.save()
     return redirect("employee_list")
 
@@ -242,6 +254,7 @@ def employee_edit(request):
     employee_level_id = request.POST.get("level")
     employee_position_id = request.POST.get("position")
     employee_status = request.POST.get("status")
+    induction_datetime = request.POST.get("induction_datetime")
     not_null = [employee_id, employee_name, employee_gender, employee_manager_id, employee_department_id, province_name,
                 city_name, employee_salary, employee_level_id, employee_position_id, employee_status]
     for item in not_null:
@@ -260,11 +273,15 @@ def employee_edit(request):
     employee_level_id = int(employee_level_id)
     employee_position_id = int(employee_position_id)
     employee_status = int(employee_status)
+    induction_datetime = utils.escape(induction_datetime)
+    induction_datetime = time.strftime("%Y-%m-%d %H:%M:%S", time.strptime(induction_datetime, "%m/%d/%Y %H:%M:%S"))
+
     Employee.objects.filter(id=employee_id).update(
                             name=employee_name, gender=employee_gender, email=employee_email, phone=employee_phone,
                             manager_id=employee_manager_id, department_id=employee_department_id,
                             province_name=province_name, city_name=city_name, salary=employee_salary,
-                            level_id=employee_level_id, position_id=employee_position_id, status=employee_status)
+                            level_id=employee_level_id, position_id=employee_position_id, status=employee_status,
+                            induction_date=induction_datetime)
     return redirect("employee_list")
 
 @checklogin()
@@ -275,4 +292,40 @@ def employee_del(request):
     employee_id = int(employee_id)
     Employee.objects.filter(id=employee_id).delete()
     return HttpResponse(1)
+
+@checklogin()
+def employee_promote_list(request):
+    return employee_list(request, 'employee_promote.html')
+
+@checklogin()
+def employee_promote(request):
+    employee_id = request.POST.get("employee_id")
+    to_level_id = request.POST.get("to_level_id")
+    if not employee_id or not to_level_id:
+        return redirect("employee_promote_list")
+    employee_id = int(employee_id)
+    to_level_id = int(to_level_id)
+    from_level_id = -1
+    try:
+        employee = Employee.objects.get(pk=employee_id)
+        to_level = EmployeeLevel.objects.get(pk=to_level_id)
+        if employee and to_level:
+            from_level_id = employee.level_id
+            if to_level.order - employee.level.order > 0:
+                type = 0
+            elif to_level.order - employee.level.order < 0:
+                type = 2
+            else:
+                type = -1
+            if type != -1:
+                with transaction.atomic():
+                    new_promote_history = EmployPromoteHistory(type=type, employee_id=employee.id, from_level_id=employee.level_id, to_level_id=to_level_id)
+                    new_promote_history.save()
+                    employee.level_id = to_level_id
+                    employee.save()
+    except IntegrityError:
+        logger.error("Failed to promote employee: %s from level: %s to level: %s" % (employee_id, from_level_id, to_level_id))
+        return redirect("employee_promote_list")
+
+    return redirect("employee_promote_list")
 
