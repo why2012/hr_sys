@@ -25,18 +25,20 @@ def index(request):
             currChildMenuItems = MenuItem.objects.filter(parent_id=menuItem.id)
             for tmpMenuItem in currChildMenuItems:
                 if tmpMenuItem.id not in menuTree[menuItem.id]["childIds"]:
+                    menuTree[menuItem.id]["childIds"].append(tmpMenuItem.id)
                     menuTree[menuItem.id]["childDetail"].append(tmpMenuItem);
         else:
             if menuItem.parent_id != -1 and menuItem.parent_id not in menuTree:
                 menuTree[menuItem.parent_id] = {"name": None, "order": None, "childIds": [], "childDetail": []}
             if menuItem.id not in menuTree[menuItem.parent_id]["childIds"]:
+                menuTree[menuItem.parent_id]["childIds"].append(menuItem.id)
                 menuTree[menuItem.parent_id]["childDetail"].append(menuItem)
     for parentMenuItemId, data in menuTree.items():
         if data["name"] is None or data["order"] is None:
             parentMenuItem = MenuItem.objects.get(pk=parentMenuItemId)
             data["name"] = parentMenuItem.name
             data["order"] = parentMenuItem.order
-        data["childIds"].sort(key=lambda item: item.order)
+        data["childDetail"].sort(key=lambda item: item.order)
         parentMenuItemOrdering.append({"id": parentMenuItemId, "order": data["order"]})
     parentMenuItemOrdering.sort(key=lambda item: item["order"])
 

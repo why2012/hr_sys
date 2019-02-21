@@ -3,7 +3,7 @@
 <head>
     {% load static %}
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <title>用户管理</title>
+    <title>用户组管理</title>
     <link rel="stylesheet" type="text/css" href="{% static "mysite/css/easyui_themes/default/easyui.css" %}">
     <link rel="stylesheet" type="text/css" href="{% static "mysite/css/easyui_themes/icon.css" %}">
     <link rel="stylesheet" type="text/css" href="{% static "mysite/css/easyui_demo/demo.css" %}">
@@ -33,17 +33,18 @@
         }
     </style>
 </head>
+<body>
+<!DOCTYPE html>
+<html lang="en">
 <body style="overflow: hidden;">
     <div id="employee_level_container">
         <table id="dg" class="easyui-datagrid" title="" style="width:100%;height:400px"
-            data-options="singleSelect:true,url:'user_list_json',method:'get',toolbar:toolbar">
+            data-options="singleSelect:true,url:'usergroup_list_json',method:'get',toolbar:toolbar">
             <thead>
                 <tr>
-                    <th data-options="field:'user_id',width:150">用户ID</th>
-                    <th data-options="field:'user_name',width:150">用户</th>
-                    <th data-options="field:'user_email',width:300">Email</th>
-                    <th data-options="field:'user_group_id',width:150,align:'right'">用户组ID</th>
-                    <th data-options="field:'user_group_name',width:150,align:'right'">用户组</th>
+                    <th data-options="field:'group_id',width:150">用户组ID</th>
+                    <th data-options="field:'group_name',width:150">用户组</th>
+                    <th data-options="field:'group_remark',width:300">备注</th>
                 </tr>
             </thead>
         </table>
@@ -61,17 +62,17 @@
                 handler:function(){
                     var row = $('#dg').datagrid('getSelected');
                     if (row){
-                        if (!confirm("确认删除用户: " + row.user_name + " ?!")) {
+                        if (!confirm("确认删除用户组: " + row.group_name + " ?!")) {
                             return;
                         }
-                        if (row.user_id == 1) {
-                            alert("不能删除此用户！");
+                        if (row.group_id == 1) {
+                            alert("不能删除此用户组！");
                             return;
                         }
                         $.ajax({
                              type: "POST",
-                             url: "user_del",
-                             data: {user_id: row.user_id},
+                             url: "group_del",
+                             data: {group_id: row.group_id},
                              dataType: "json",
                              success: function(data){
                                  data = parseInt(data);
@@ -90,10 +91,9 @@
                 handler:function(){
                     var row = $('#dg').datagrid('getSelected');
                     if (row){
-                        $("#edit_user_id").val(row.user_id);
-                        $("#edit_id_name").val(row.user_name);
-                        $("#edit_user_email").val(row.user_email);
-                        $("#edit_user_group_id").val(row.user_group_id);
+                        $("#edit_group_id").val(row.group_id);
+                        $("#edit_group_name").val(row.group_name);
+                        $("#edit_group_remark").val(row.group_remark);
                         $('#dlg').dialog('close');
                         $('#dlg_edit').dialog('open');
                     }
@@ -102,42 +102,24 @@
             }];
         </script>
     </div>
-    <div id="dlg" class="easyui-dialog" title="添加用户" data-options="iconCls:'icon-add'" style="width:600px;height:400px;padding:10px;" closed="true">
+    <div id="dlg" class="easyui-dialog" title="添加用户组" data-options="iconCls:'icon-add'" style="width:600px;height:400px;padding:10px;" closed="true">
         <div id="content" class="colM">
-            <h1>Add User</h1>
+            <h1>Add User Group</h1>
             <div id="content-main">
-                <form action="user_add" method="post" id="user_add_form" novalidate="">
+                <form action="group_add" method="post" id="user_add_form" novalidate="">
                     {% csrf_token %}
                     <div>
                         <fieldset class="module aligned ">
                             <div class="form-row field-name">
                                 <div>
                                     <label class="required" for="id_name">Name:</label>
-                                    <input type="text" name="user_name" class="vTextField" maxlength="255" required="" id="id_name">
+                                    <input type="text" name="group_name" class="vTextField" maxlength="255" required="" id="group_name">
                                 </div>
                             </div>
                             <div class="form-row field-parent_id">
                                 <div>
-                                    <label class="required" for="user_email">Email:</label>
-                                    <input type="text" name="user_email" class="vTextField" maxlength="255" required=""  required="" id="user_email">
-                                </div>
-                             </div>
-                            <div class="form-row field-parent_id">
-                                <div>
-                                    <label class="required" for="user_password">Password:</label>
-                                    <input type="text" name="user_password" class="vTextField" maxlength="255" required=""  required="" id="user_password">
-                                </div>
-                             </div>
-                             <div class="form-row field-department">
-                                <div>
-                                    <label class="required" for="user_group_id">User Group:</label>
-                                    <div class="related-widget-wrapper">
-                                        <select name="user_group_id" required="" id="user_group_id">
-                                            {% for item in user_groups %}
-                                              <option value="{{ item.id }}">{{ item.name }}</option>
-                                            {% endfor %}
-                                        </select>
-                                    </div>
+                                    <label class="required" for="user_email">Remark:</label>
+                                    <input type="text" name="group_remark" class="vTextField" maxlength="255" required=""  required="" id="group_remark">
                                 </div>
                              </div>
 
@@ -152,43 +134,25 @@
         </div>
     </div>
 
-    <div id="dlg_edit" class="easyui-dialog" title="编辑用户" data-options="iconCls:'icon-edit'" style="width:600px;height:400px;padding:10px;" closed="true">
+    <div id="dlg_edit" class="easyui-dialog" title="编辑用户组" data-options="iconCls:'icon-edit'" style="width:600px;height:400px;padding:10px;" closed="true">
         <div id="edit_content" class="colM">
-            <h1>Edit User</h1>
+            <h1>Edit User Group</h1>
             <div id="edit-content-main">
-                <form action="user_edit" method="post" id="edit_user_form" novalidate="">
+                <form action="group_edit" method="post" id="edit_user_form" novalidate="">
                     {% csrf_token %}
                     <div>
-                        <input type="hidden" name="user_id" id="edit_user_id">
+                        <input type="hidden" name="group_id" id="edit_group_id">
                         <fieldset class="module aligned ">
                             <div class="form-row field-name">
                                 <div>
-                                    <label class="required" for="edit_id_name">Name:</label>
-                                    <input type="text" name="user_name" class="vTextField" maxlength="255" required="" id="edit_id_name">
+                                    <label class="required" for="edit_group_name">Name:</label>
+                                    <input type="text" name="group_name" class="vTextField" maxlength="255" required="" id="edit_group_name">
                                 </div>
                             </div>
                             <div class="form-row field-parent_id">
                                 <div>
-                                    <label class="required" for="edit_user_email">Email:</label>
-                                    <input type="text" name="user_email" class="vTextField" maxlength="255" required=""  required="" id="edit_user_email">
-                                </div>
-                             </div>
-                            <div class="form-row field-parent_id">
-                                <div>
-                                    <label class="required" for="edit_user_password">Password:</label>
-                                    <input type="text" name="user_password" class="vTextField" maxlength="255" required=""  required="" id="edit_user_password">
-                                </div>
-                             </div>
-                             <div class="form-row field-department">
-                                <div>
-                                    <label class="required" for="edit_user_group_id">User Group:</label>
-                                    <div class="related-widget-wrapper">
-                                        <select name="user_group_id" required="" id="edit_user_group_id">
-                                            {% for item in user_groups %}
-                                              <option value="{{ item.id }}">{{ item.name }}</option>
-                                            {% endfor %}
-                                        </select>
-                                    </div>
+                                    <label class="required" for="edit_group_remark">Remark:</label>
+                                    <input type="text" name="group_remark" class="vTextField" maxlength="255" required=""  required="" id="edit_group_remark">
                                 </div>
                              </div>
 
@@ -202,5 +166,7 @@
             <br class="clear">
         </div>
     </div>
+</body>
+</html>
 </body>
 </html>
