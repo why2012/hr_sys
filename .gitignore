@@ -3,5 +3,7 @@ polls/
 .idea/
 *.pyc
 *.sqlite3
-migrations/*.*
+migrations/
 !migrations/__init__.py
+files/
+!files/index.html

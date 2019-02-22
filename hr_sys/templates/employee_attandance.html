@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>考勤录入</title>
+    <link rel="stylesheet" type="text/css" href="{% static "mysite/css/easyui_themes/default/easyui.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "mysite/css/easyui_themes/icon.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "mysite/css/easyui_demo/demo.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "mysite/css/login_css/base.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "admin/css/forms.css" %}">
+    <script type="text/javascript" src="{% static "mysite/js/jquery.min.js" %}"></script>
+    <script type="text/javascript" src="{% static "mysite/js/jquery.easyui.min.js" %}"></script>
+    <script type="text/javascript" src="{% static "mysite/js/jquery.cookie.js" %}"></script>
+    <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <meta name="robots" content="NONE,NOARCHIVE">
+    <script type="text/javascript">
+        $(function () {
+            $.ajaxSetup({
+                beforeSend:function (xhr, settings) {
+                    xhr.setRequestHeader("X-CSRFtoken", $.cookie("csrftoken"))
+                }
+            });
+
+            $("#save_data_btn").click(function () {
+                var redirect = $(this).attr("redirect");
+                if (redirect == "not-allowed") {
+                    alert("先提交考勤表");
+                    return;
+                }
+                window.location.href = redirect;
+            });
+        });
+    </script>
+    <style type="text/css">
+        #edit_content {
+            padding: 20px 0;
+        }
+    </style>
+</head>
+<body style="overflow: hidden;">
+    <div>
+        <div class="easyui-panel" style="width:600px;height:80px;padding:20px 60px;">
+            <div style="float: left">
+                <a href="{% url "employee_attandance_template_download" %}" class="easyui-linkbutton">下载考勤表</a>
+            </div>
+            <div style="margin-left:50px;float: left">
+                <form action="{% url "employee_attandance" %}" method="post" id="upload_form" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input id="upload_file" name="upload_file" class="easyui-filebox" style="width:200px" data-options="prompt:'上传考勤数据...'"/>
+                    <a id="upload_submit" class="easyui-linkbutton" style="width:80px" onclick="$('#upload_form').submit();">Upload</a>
+                </form>
+            </div>
+        </div>
+        {% if error_msg %}
+            <p class="errornote" style="max-width: 400px;">{{ error_msg }}</p>
+        {% endif %}
+        {% if ok_msg %}
+            <p class="errornote" style="max-width: 400px; border: 1px solid green; color: green;">{{ ok_msg }}</p>
+        {% endif %}
+    </div>
+
+    <div id="employee_list_container" style="margin-top: 10px;">
+        <table id="dg" class="easyui-datagrid" title="" style="width:100%;height:400px"
+            data-options="singleSelect:true,url:'{{ grid_url }}',method:'get'" pagination="true">
+            <thead>
+                <tr>
+                    <th data-options="field:'employee_id',width:150,align:'center'">员工ID</th>
+                    <th data-options="field:'employee_name',width:150,align:'center'">姓名</th>
+                    <th data-options="field:'employee_gender',width:150,align:'center'">性别</th>
+                    <th data-options="field:'employee_position',width:150,align:'center'">部门</th>
+                    <th data-options="field:'is_late',width:150,align:'center'">是否迟到</th>
+                    <th data-options="field:'checktime',width:150,align:'center'">签到时间</th>
+                    <th data-options="field:'standardtime',width:150,align:'center'">基准时间</th>
+                </tr>
+            </thead>
+        </table>
+        <script type="text/javascript">
+
+        </script>
+    </div>
+    <div id="edit_content" class="colM">
+        <div id="edit-content-main">
+            <div>
+                <div class="submit-row">
+                    <input id="save_data_btn" type="submit" redirect="{{ save_btn_redirect }}" value="确认记录以上数据">
+                </div>
+            </div>
+        </div>
+        <br class="clear"/>
+    </div>
+</body>
+</html>

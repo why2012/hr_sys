@@ -15,7 +15,7 @@ def login(request):
     context = {}
     if request.method == "GET":
         if request.GET.get("error_msg"):
-            context["error_msg"] = request.GET["error_msg"]
+            context["error_msg"] = utils.escape(request.GET["error_msg"])
         return render(request, 'login.html', context)
     elif request.method == "POST":
         username = request.POST.get("username")
