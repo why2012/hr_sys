@@ -3,7 +3,7 @@ from django.urls import path, re_path
 from .views import user_auth_views, main_frame_views, department_views, employee_views
 
 urlpatterns = [
-    re_path('^login/.*$', user_auth_views.login, name='login'),
+    re_path('^login/$', user_auth_views.login, name='login'),
     path('logout', user_auth_views.logout, name='logout'),
     path('', main_frame_views.index, name='main_frame'),
     path('overview', main_frame_views.overview, name='overview'),
@@ -33,6 +33,10 @@ urlpatterns = [
     path('employee_del', employee_views.employee_del, name='employee_del'),
     path('employee_promote_list', employee_views.employee_promote_list, name='employee_promote_list'),
     path('employee_promote', employee_views.employee_promote, name='employee_promote'),
+    re_path('^employee_attandance/$', employee_views.employee_attandance, name='employee_attandance'),
+    path('employee_attandance_template_download', employee_views.employee_attandance_template_download, name='employee_attandance_template_download'),
+    path('employee_attandance_save_viewlist_json', employee_views.employee_attandance_save_viewlist_json, name='employee_attandance_save_viewlist_json'),
+    path('employee_attandance_save', employee_views.employee_attandance_save, name='employee_attandance_save'),
     # 系统用户权限管理
     path('add_a_user', user_auth_views.add_a_user, name='add_a_user'),
     path('user_list_json', user_auth_views.user_list_json, name='user_list_json'),

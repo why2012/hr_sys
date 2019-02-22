@@ -3,14 +3,18 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.db import connection
 from django.db import IntegrityError, transaction
+from django.urls import reverse
 from hr_sys.decorators import checklogin
 import json
-from hr_sys.models import Department, EmployeeLevel, Employee, EmployeePosition, EmployPromoteHistory
+from hr_sys.models import Department, EmployeeLevel, Employee, EmployeePosition, EmployPromoteHistory, EmployeeAttendance
 from jinja2 import utils
 from hr_sys.libs.sql_helper import namedtuplefetchall
 import logging
-from urllib.parse import urlencode
+from urllib.parse import urlencode, quote
 import time
+import codecs
+import uuid
+import os
 logger = logging.getLogger(__name__)
 
 @checklogin()
@@ -328,4 +332,155 @@ def employee_promote(request):
         return redirect("employee_promote_list")
 
     return redirect("employee_promote_list")
+
+@checklogin()
+def employee_attandance(request):
+    def check_file(file_h):
+        try:
+            standard_time_line = file_h.readline()
+            if len(standard_time_line.split(",")) != 2 or len(standard_time_line.split(",")[1].split(":")) != 2:
+                raise Exception("基准时间行格式错误")
+            heading_line = file_h.readline()
+            if len(heading_line.split(",")) != 6:
+                raise Exception("表头格式错误")
+            data_line = file_h.readline()
+            if not data_line:
+                raise EOFError()
+            line_no = 3
+            while data_line:
+                data_line = data_line.strip()
+                data_item = data_line.split(",")
+                if len(data_item) != 6:
+                    raise Exception("数据行%s格式错误" % line_no)
+                try:
+                    time.strptime(data_item[5].strip(), "%Y-%m-%d %H:%M:%S")
+                except Exception as e:
+                    raise Exception("数据行%s日期格式错误: %s" % (line_no, data_item[5]))
+                data_line = file_h.readline()
+                line_no += 1
+        except EOFError:
+            return "数据缺失"
+        except Exception as e:
+            return str(e)
+        return ""
+    context = {}
+    error_msg = request.GET.get("error_msg")
+    ok_msg = request.GET.get("ok_msg")
+    filename = ""
+    if request.method == 'POST':
+        file_handler = request.FILES.get('upload_file')
+        if file_handler:
+            filename = Employee._meta.app_label + '/files/attandance-%s.csv' % uuid.uuid1()
+            with open(filename, 'wb') as destination:
+                for chunk in file_handler.chunks():
+                    destination.write(chunk)
+            with open(filename, 'r', encoding='UTF-8') as f:
+                error_msg = check_file(f)
+            if error_msg:
+                os.remove(filename)
+        else:
+            error_msg = "提交文件不能为空"
+    if error_msg:
+        context["error_msg"] = utils.escape(error_msg)
+    if ok_msg:
+        context["ok_msg"] = utils.escape(ok_msg)
+    if filename and not error_msg:
+        context["grid_url"] = reverse("employee_attandance_save_viewlist_json") + "?filepath=" + filename
+        context["save_btn_redirect"] = reverse("employee_attandance_save") + "?filepath=" + filename
+    else:
+        context["grid_url"] = reverse("employee_attandance_save_viewlist_json")
+        context["save_btn_redirect"] = "not-allowed"
+    return render(request, "employee_attandance.html", context)
+
+@checklogin()
+def employee_attandance_template_download(request):
+    def make_template():
+        all_employees = Employee.objects.filter(status=0).all()
+        template_lines = ["考勤基准时间(请根据需要更改):, 10:00", "员工ID, 姓名, 性别, 部门, 是否迟到(是/否), 签到时间(年-月-日 小时:分:秒)"]
+        for item in all_employees:
+            gender = '男'
+            if item.gender == 1:
+                gender = '女'
+            template_lines.append("{id}, {name}, {gender}, {depart}, {is_late}, {check_time}".format(
+                id=item.id, name=item.name, gender=gender, depart=item.department.name, is_late="否", check_time="xxxx-xx-xx xx:xx:xx"
+            ))
+        return "\n".join(template_lines)
+
+    response = HttpResponse(content_type='text/csv')
+    response.write(codecs.BOM_UTF8)
+    response.write(make_template())
+    response['Content-Type'] = 'application/octet-stream'
+    response['Content-Disposition'] = 'attachment;filename="attandance_template.csv"'
+    return response
+
+@checklogin()
+def employee_attandance_save_viewlist_json(request):
+    attandance_data_filepath = request.GET.get("filepath")
+    attandance_list = {"total": 0, "rows": []}
+    if not attandance_data_filepath:
+        attandance_list["total"] = 1
+        attandance_list["rows"].append({"employee_id": "-", "employee_name": "-", "employee_gender": "-", "employee_position": "-",
+                                        "is_late": "-", "checktime": "-", "standardtime": "-"})
+    else:
+        if attandance_data_filepath.startswith(Employee._meta.app_label + "/files/") and attandance_data_filepath.endswith(".csv"):
+            try:
+                with open(attandance_data_filepath, encoding='UTF-8') as file_h:
+                    standard_time_line = file_h.readline()
+                    heading_line = file_h.readline()
+                    data_line = file_h.readline()
+
+                    standard_time = utils.escape(standard_time_line.split(",")[1])
+                    attandance_list["total"] = 0
+                    while data_line:
+                        attandance_list["total"] += 1
+                        data_line = data_line.strip()
+                        attandance_item = data_line.split(",")
+                        attandance_list["rows"].append(
+                            {"employee_id": int(attandance_item[0]), "employee_name": utils.escape(attandance_item[1]),
+                             "employee_gender": utils.escape(attandance_item[2]), "employee_position": utils.escape(attandance_item[3]),
+                             "is_late": utils.escape(attandance_item[4]), "checktime": attandance_item[5], "standardtime": utils.escape(standard_time)})
+                        data_line = file_h.readline()
+            except Exception as e:
+                logger.error(e)
+                attandance_list["rows"].append(
+                    {"employee_id": "-", "employee_name": "文件处理出错", "employee_gender": "-", "employee_position": "-",
+                     "is_late": "-", "checktime": "-", "standardtime": "-"})
+    return HttpResponse(json.dumps(attandance_list, ensure_ascii=False), content_type="application/json, charset=utf-8")
+
+@checklogin()
+def employee_attandance_save(request):
+    attandance_data_filepath = request.GET.get("filepath")
+    msgs = {}
+    attandance_list = []
+    if attandance_data_filepath:
+        if attandance_data_filepath.startswith(Employee._meta.app_label + "/files/") and attandance_data_filepath.endswith(".csv"):
+            try:
+                with open(attandance_data_filepath, encoding='UTF-8') as file_h:
+                    standard_time_line = file_h.readline()
+                    heading_line = file_h.readline()
+                    data_line = file_h.readline()
+
+                    standard_time = utils.escape(standard_time_line.split(",")[1])
+                    while data_line:
+                        data_line = data_line.strip()
+                        attandance_item = data_line.split(",")
+                        late_type = 0
+                        if attandance_item[4] == "是":
+                            late_type = 1
+                        attandance_list.append(EmployeeAttendance(**{"employee_id": int(attandance_item[0]), "type": late_type,
+                             "check_time": attandance_item[5].strip(), "standard_time": standard_time}))
+                        data_line = file_h.readline()
+                    EmployeeAttendance.objects.bulk_create(attandance_list)
+                    msgs["ok_msg"] = "保存成功"
+            except Exception as e:
+                logger.error(e)
+                msgs["error_msg"] = "保存失败, 请重新提交"
+            if os.path.isfile(attandance_data_filepath):
+                os.remove(attandance_data_filepath)
+    return redirect("employee_attandance/?" + urlencode(msgs))
+
+
+
+
+
 

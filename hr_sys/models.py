@@ -85,7 +85,7 @@ class EmployPromoteHistory(models.Model):
 class EmployeeAttendance(models.Model):
     employee = models.ForeignKey(Employee, on_delete=models.DO_NOTHING)
     type = models.SmallIntegerField(choices=((0, "ontime"), (1, "late")))
-    standard_time = models.SmallIntegerField() # 0~23 * 60 一天内的考勤时间点
+    standard_time = models.CharField(max_length=20) # 10:00 一天内的考勤时间点
     check_time = models.DateTimeField(auto_now_add=True)
 
 # 其他杂项
