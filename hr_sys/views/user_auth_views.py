@@ -18,8 +18,8 @@ def login(request):
             context["error_msg"] = utils.escape(request.GET["error_msg"])
         return render(request, 'login.html', context)
     elif request.method == "POST":
-        username = request.POST.get("username")
-        password = request.POST.get("password")
+        username = utils.escape(request.POST.get("username"))
+        password = utils.escape(request.POST.get("password"))
         hashed_password = hashers.make_password(password=password, salt=settings.SALT)
         queryset = User.objects.filter(name=username, password=hashed_password)
         if not queryset or len(queryset) == 0 or not queryset[0].user_group:

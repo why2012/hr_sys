@@ -36,7 +36,11 @@ urlpatterns = [
     re_path('^employee_attandance/$', employee_views.employee_attandance, name='employee_attandance'),
     path('employee_attandance_template_download', employee_views.employee_attandance_template_download, name='employee_attandance_template_download'),
     path('employee_attandance_save_viewlist_json', employee_views.employee_attandance_save_viewlist_json, name='employee_attandance_save_viewlist_json'),
+    path('employee_attendance_list_json', employee_views.employee_attendance_list_json, name='employee_attendance_list_json'),
     path('employee_attandance_save', employee_views.employee_attandance_save, name='employee_attandance_save'),
+    path('employee_person_stat', employee_views.employee_person_stat, name='employee_person_stat'),
+    path('employee_person_promotion_list_json', employee_views.employee_person_promotion_list_json, name='employee_person_promotion_list_json'),
+    path('employee_attendance_chart_json', employee_views.employee_attendance_chart_json, name='employee_attendance_chart_json'),
     # 系统用户权限管理
     path('add_a_user', user_auth_views.add_a_user, name='add_a_user'),
     path('user_list_json', user_auth_views.user_list_json, name='user_list_json'),

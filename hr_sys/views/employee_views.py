@@ -12,6 +12,7 @@ from hr_sys.libs.sql_helper import namedtuplefetchall
 import logging
 from urllib.parse import urlencode, quote
 import time
+import datetime
 import codecs
 import uuid
 import os
@@ -478,6 +479,74 @@ def employee_attandance_save(request):
             if os.path.isfile(attandance_data_filepath):
                 os.remove(attandance_data_filepath)
     return redirect("employee_attandance/?" + urlencode(msgs))
+
+@checklogin()
+def employee_person_stat(request):
+    return employee_list(request, 'employee_person_stat.html')
+
+@checklogin()
+def employee_attendance_list_json(request):
+    employee_id = request.POST.get("employee_id")
+    attandance_list = []
+    if not employee_id:
+        return HttpResponse(json.dumps(attandance_list, ensure_ascii=False), content_type="application/json, charset=utf-8")
+    employee_id = int(employee_id)
+    employee_attendance_log = EmployeeAttendance.objects.filter(employee_id=employee_id).order_by("-check_time").all()
+    for item in employee_attendance_log:
+        is_late = "否"
+        if item.type == 1:
+            is_late = "是"
+        attandance_list.append({
+                    "employee_id": employee_id, "employee_name": item.employee.name,
+                     "is_late": is_late, "checktime": str(item.check_time), "standardtime": item.standard_time})
+    return HttpResponse(json.dumps(attandance_list, ensure_ascii=False), content_type="application/json, charset=utf-8")
+
+@checklogin()
+def employee_person_promotion_list_json(request):
+    employee_id = request.POST.get("employee_id")
+    promotion_list = []
+    if not employee_id:
+        return HttpResponse(json.dumps(promotion_list, ensure_ascii=False), content_type="application/json, charset=utf-8")
+    employee_id = int(employee_id)
+    employee_promotion_log = EmployPromoteHistory.objects.filter(employee_id=employee_id).order_by("-log_time").all()
+    for item in employee_promotion_log:
+        promote_type = "晋升"
+        if item.type == 1:
+            promote_type = "离职"
+        elif item.type == 2:
+            promote_type = "降职"
+        promotion_list.append({
+            "employee_id": employee_id, "employee_name": item.employee.name, "datetime": str(item.log_time),
+            "promote_type": promote_type, "from_level_name": item.from_level.name, "to_level_name": item.to_level.name})
+    return HttpResponse(json.dumps(promotion_list, ensure_ascii=False), content_type="application/json, charset=utf-8")
+
+@checklogin()
+def employee_attendance_chart_json(request):
+    employee_id = request.POST.get("employee_id")
+    attendance_list = {"xAxis": [], "values": []}
+    if not employee_id:
+        return HttpResponse(json.dumps(attendance_list, ensure_ascii=False), content_type="application/json, charset=utf-8")
+    employee_id = int(employee_id)
+    today = datetime.date.today()
+    first_day = today.replace(day=1)
+    last_month = first_day - datetime.timedelta(days=1)
+    last_month_today = last_month.replace(day=today.day)
+    attendance_objs = EmployeeAttendance.objects.filter(employee_id=employee_id, check_time__gte=last_month_today).order_by("check_time").all()
+    curr_datetime = last_month_today
+    item_index = 0
+    while curr_datetime != today:
+        datestr = curr_datetime.strftime("%Y-%m-%d")
+        attendance_list["xAxis"].append(datestr)
+        if item_index < len(attendance_objs):
+            item = attendance_objs[item_index]
+            if item.check_time.date() == curr_datetime:
+                attendance_list["values"].append({"name": datestr, "value": item.check_time.timetuple().tm_hour})
+                item_index += 1
+            else:
+                attendance_list["values"].append({"name": datestr, "value": 0})
+        curr_datetime = curr_datetime + datetime.timedelta(days=1)
+    return HttpResponse(json.dumps(attendance_list, ensure_ascii=False), content_type="application/json, charset=utf-8")
+
 
 
 
