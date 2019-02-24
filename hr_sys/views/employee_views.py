@@ -539,11 +539,13 @@ def employee_attendance_chart_json(request):
         attendance_list["xAxis"].append(datestr)
         if item_index < len(attendance_objs):
             item = attendance_objs[item_index]
-            if item.check_time.date() == curr_datetime:
-                attendance_list["values"].append({"name": datestr, "value": item.check_time.timetuple().tm_hour})
-                item_index += 1
-            else:
-                attendance_list["values"].append({"name": datestr, "value": 0})
+        else:
+            item = None
+        if item and item.check_time.date() == curr_datetime:
+            attendance_list["values"].append({"name": datestr, "value": item.check_time.timetuple().tm_hour})
+            item_index += 1
+        else:
+            attendance_list["values"].append({"name": datestr, "value": 0})
         curr_datetime = curr_datetime + datetime.timedelta(days=1)
     return HttpResponse(json.dumps(attendance_list, ensure_ascii=False), content_type="application/json, charset=utf-8")
 

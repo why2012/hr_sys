@@ -1,12 +1,11 @@
 # coding : utf-8
 from django.urls import path, re_path
-from .views import user_auth_views, main_frame_views, department_views, employee_views
+from .views import user_auth_views, main_frame_views, department_views, employee_views, overview
 
 urlpatterns = [
     re_path('^login/$', user_auth_views.login, name='login'),
     path('logout', user_auth_views.logout, name='logout'),
     path('', main_frame_views.index, name='main_frame'),
-    path('overview', main_frame_views.overview, name='overview'),
     # 部门管理
     path('department_list', department_views.department_list, name='department_list'),
     path('department_tree_json', department_views.department_tree_json, name="department_tree_json"),
@@ -58,4 +57,11 @@ urlpatterns = [
     path('group_priv_del', user_auth_views.group_priv_del, name='group_priv_del'),
     path('group_priv_edit', user_auth_views.group_priv_edit, name='group_priv_edit'),
     path('group_priv_tree_json', user_auth_views.group_priv_tree_json, name='group_priv_tree_json'),
+    # 总览
+    path('overview', overview.overview, name='overview'),
+    path('overview_list_json', overview.overview_list_json, name='overview_list_json'),
+    path('employee_amount_by_department', overview.employee_amount_by_department, name='employee_amount_by_department'),
+    path('employee_gender_by_department', overview.employee_gender_by_department, name='employee_gender_by_department'),
+    path('employee_attendance_log', overview.employee_attendance_log, name='employee_attendance_log'),
+    path('employee_promote_log', overview.employee_promote_log, name='employee_promote_log'),
 ]
